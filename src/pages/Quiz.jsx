@@ -6,12 +6,7 @@ export default function Quiz() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({ interest: "", style: "" });
   const [loading, setLoading] = useState(false);
-
-  // Clear previous results whenever the Quiz component mounts
-  useEffect(() => {
-    localStorage.removeItem("quizResults");
-    localStorage.removeItem("careerRecommendation");
-  }, []);
+  const [shuffledOptions, setShuffledOptions] = useState([]);
 
   const questions = [
     {
@@ -30,12 +25,23 @@ export default function Quiz() {
     }
   ];
 
+  // Shuffle options whenever the step changes
+  useEffect(() => {
+    const currentOptions = questions[step].options;
+    const shuffled = [...currentOptions].sort(() => Math.random() - 0.5);
+    setShuffledOptions(shuffled);
+  }, [step]);
+
+  // Force clean state on mount
+  useEffect(() => {
+    localStorage.removeItem("quizResults");
+    localStorage.removeItem("careerRecommendation");
+  }, []);
+
   const handleSelect = (key, value, styleValue) => {
-    // Save the text for display, and the style for the AI analysis
     const newAnswers = { 
       ...answers, 
       [key]: value,
-      // If we have a specific 'style' property, store that, otherwise store the text
       style: styleValue || value 
     };
     
@@ -51,30 +57,29 @@ export default function Quiz() {
   const finalizeQuiz = (finalAnswers) => {
     setLoading(true);
     localStorage.setItem("quizResults", JSON.stringify(finalAnswers));
-    setTimeout(() => navigate("/results"), 1000);
+    // Small delay to let the UI breathe
+    setTimeout(() => navigate("/results"), 800);
   };
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center h-screen text-white">
-      <div className="animate-spin h-10 w-10 border-4 border-indigo-500 border-t-transparent rounded-full mb-4"></div>
-      <h2 className="text-2xl font-bold">Analyzing your professional profile...</h2>
+    <div className="flex flex-col items-center justify-center h-screen text-white bg-[#0f172a]">
+      <div className="animate-spin h-12 w-12 border-4 border-indigo-500 border-t-transparent rounded-full mb-4"></div>
+      <h2 className="text-2xl font-bold animate-pulse">Analyzing your professional profile...</h2>
     </div>
   );
 
-  const currentQ = questions[step];
-
   return (
-    <div className="p-10 max-w-2xl mx-auto">
-      <h2 className="text-3xl font-bold mb-10 text-white">{currentQ.q}</h2>
+    <div className="p-10 max-w-2xl mx-auto min-h-screen flex flex-col justify-center">
+      <h2 className="text-4xl font-extrabold mb-10 text-white leading-tight">{questions[step].q}</h2>
       <div className="grid gap-4">
-        {currentQ.options.map((opt, i) => {
+        {shuffledOptions.map((opt, i) => {
           const text = opt.text || opt;
           const style = opt.style || opt;
           return (
             <button 
               key={i} 
-              onClick={() => handleSelect(currentQ.key, text, style)} 
-              className="p-6 bg-[#1a1a1a] hover:bg-[#4f46e5] text-white rounded-xl border border-gray-700 transition-all text-left"
+              onClick={() => handleSelect(questions[step].key, text, style)} 
+              className="p-6 bg-[#1e293b] hover:bg-indigo-600 border border-gray-700 text-white rounded-xl transition-all text-left shadow-lg"
             >
               {text}
             </button>
